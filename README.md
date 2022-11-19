@@ -1,3 +1,3 @@
-# react-vite-template
+# canvas-test
 
-vitejs で React のプロジェクトを作る際のテンプレート
+canvas上での描画を試す
