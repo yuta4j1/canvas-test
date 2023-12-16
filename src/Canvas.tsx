@@ -7,15 +7,14 @@ type Pointer = {
   y: number
 }
 
-let drawState = false
+let drawing = false
 let pointers: Pointer[] = []
 
 const Canvas = () => {
   const [updated, setUpdated] = useState(false)
   const canvasEl = useRef<HTMLCanvasElement | null>(null)
   const drawOn = throttle((e: MouseEvent) => {
-    // console.log('draw on')
-    drawState = true
+    drawing = true
     const clientRect = canvasEl.current?.getBoundingClientRect()
     if (clientRect) {
       pointers.push({
@@ -23,36 +22,36 @@ const Canvas = () => {
         y: e.clientY - clientRect.top,
       })
     }
-  }, 800)
+  }, 0)
   const drawOff = throttle(() => {
-    // console.log('draw off')
-    drawState = false
+    drawing = false
     if (pointers.length > 0) {
       pointers.pop()
     }
     setUpdated(false)
-  }, 800)
-  function mouseMove(this: HTMLCanvasElement, e: MouseEvent) {
+  }, 200)
+  function mouseMove(e: MouseEvent) {
     const ctx = canvasEl.current?.getContext('2d')
-    if (drawState) {
-      if (pointers.length > 0) {
-        if (!ctx) return
-        const prevPointer = pointers[pointers.length - 1]
-        ctx.beginPath()
-        ctx.moveTo(prevPointer.x, prevPointer.y)
-        const clientRect = canvasEl.current?.getBoundingClientRect()
-        if (clientRect) {
-          const nextPointer: Pointer = {
-            x: e.clientX - clientRect.left,
-            y: e.clientY - clientRect.top,
-          }
-          ctx.lineTo(nextPointer.x, nextPointer.y)
-          ctx.lineWidth = 4
-          ctx.strokeStyle = 'black'
-          ctx.stroke()
-          pointers.splice(pointers.length - 1, 1, nextPointer)
-          setUpdated(true)
+    if (drawing) {
+      if (pointers.length === 0) {
+        return
+      }
+      if (!ctx) return
+      const prevPointer = pointers[pointers.length - 1]
+      ctx.beginPath()
+      ctx.moveTo(prevPointer.x, prevPointer.y)
+      const clientRect = canvasEl.current?.getBoundingClientRect()
+      if (clientRect) {
+        const nextPointer: Pointer = {
+          x: e.clientX - clientRect.left,
+          y: e.clientY - clientRect.top,
         }
+        ctx.lineTo(nextPointer.x, nextPointer.y)
+        ctx.lineWidth = 4
+        ctx.strokeStyle = 'black'
+        ctx.stroke()
+        pointers.splice(pointers.length - 1, 1, nextPointer)
+        setUpdated(true)
       }
     }
   }
@@ -75,12 +74,12 @@ const Canvas = () => {
     }
 
     return () => {
-      if (canvasEl) {
+      if (canvasEl && canvasEl.current) {
         const canvas = canvasEl.current
-        canvas?.removeEventListener('mousedown', drawOn, false)
-        canvas?.removeEventListener('mouseup', drawOff, false)
-        canvas?.removeEventListener('mouseout', drawOff, false)
-        canvas?.removeEventListener('mousemove', mouseMove, false)
+        canvas.removeEventListener('mousedown', drawOn, false)
+        canvas.removeEventListener('mouseup', drawOff, false)
+        canvas.removeEventListener('mouseout', drawOff, false)
+        canvas.removeEventListener('mousemove', mouseMove, false)
       }
     }
   }, [])
