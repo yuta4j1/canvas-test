@@ -3,10 +3,9 @@ import Canvas from './Canvas'
 
 const App: React.FC<{}> = ({}) => {
   return (
-    <div>
-      <h2>Hello, React</h2>
+    <main>
       <Canvas />
-    </div>
+    </main>
   )
 }
 

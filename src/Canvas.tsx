@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { throttle } from 'lodash'
+import Preview from './Preview'
 
 type Pointer = {
   x: number
@@ -10,19 +11,27 @@ let drawState = false
 let pointers: Pointer[] = []
 
 const Canvas = () => {
+  const [updated, setUpdated] = useState(false)
   const canvasEl = useRef<HTMLCanvasElement | null>(null)
   const drawOn = throttle((e: MouseEvent) => {
-    console.log('draw on')
+    // console.log('draw on')
     drawState = true
-    pointers.push({ x: e.clientX, y: e.clientY })
-  }, 1000)
+    const clientRect = canvasEl.current?.getBoundingClientRect()
+    if (clientRect) {
+      pointers.push({
+        x: e.clientX - clientRect.left,
+        y: e.clientY - clientRect.top,
+      })
+    }
+  }, 800)
   const drawOff = throttle(() => {
-    console.log('draw off')
+    // console.log('draw off')
     drawState = false
     if (pointers.length > 0) {
       pointers.pop()
     }
-  }, 1000)
+    setUpdated(false)
+  }, 800)
   function mouseMove(this: HTMLCanvasElement, e: MouseEvent) {
     const ctx = canvasEl.current?.getContext('2d')
     if (drawState) {
@@ -31,13 +40,27 @@ const Canvas = () => {
         const prevPointer = pointers[pointers.length - 1]
         ctx.beginPath()
         ctx.moveTo(prevPointer.x, prevPointer.y)
-        const nextPointer: Pointer = { x: e.clientX, y: e.clientY }
-        ctx.lineTo(nextPointer.x, nextPointer.y)
-        ctx.lineWidth = 4
-        ctx.strokeStyle = 'black'
-        ctx.stroke()
-        pointers.splice(pointers.length - 1, 1, nextPointer)
+        const clientRect = canvasEl.current?.getBoundingClientRect()
+        if (clientRect) {
+          const nextPointer: Pointer = {
+            x: e.clientX - clientRect.left,
+            y: e.clientY - clientRect.top,
+          }
+          ctx.lineTo(nextPointer.x, nextPointer.y)
+          ctx.lineWidth = 4
+          ctx.strokeStyle = 'black'
+          ctx.stroke()
+          pointers.splice(pointers.length - 1, 1, nextPointer)
+          setUpdated(true)
+        }
       }
+    }
+  }
+  const drawClear = () => {
+    const ctx = canvasEl.current?.getContext('2d')
+    const canvas = canvasEl.current
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
     }
   }
   useEffect(() => {
@@ -62,8 +85,19 @@ const Canvas = () => {
     }
   }, [])
   return (
-    <div className="mt-4 border-solid border-black border-2">
-      <canvas ref={canvasEl} width="400" height="500"></canvas>
+    <div className="flex">
+      <div>
+        <button onClick={drawClear}>Clear</button>
+        <div className="border-solid border-black border-2">
+          <canvas
+            id="writable"
+            ref={canvasEl}
+            height="600"
+            width="1000"
+          ></canvas>
+        </div>
+      </div>
+      <Preview updated={updated} />
     </div>
   )
 }
