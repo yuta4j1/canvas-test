@@ -96,7 +96,7 @@ const Canvas = () => {
           ></canvas>
         </div>
       </div>
-      <Preview updated={updated} />
+      <Preview updated={updated} context={canvasEl.current?.getContext('2d')} />
     </div>
   )
 }
